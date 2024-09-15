@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "users")
 public class User extends Base{
     @Column(nullable = false)
     private String name;
@@ -17,7 +18,7 @@ public class User extends Base{
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;
-    @OneToMany
+    @OneToMany(mappedBy = "token")
     private List<Token> tokens;
 }
 
