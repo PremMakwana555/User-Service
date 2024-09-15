@@ -1,11 +1,15 @@
 package com.prem.userservice.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
 public class User extends Base{
     @Column(nullable = false)
     private String name;
@@ -14,7 +18,9 @@ public class User extends Base{
     @Column(name = "password", nullable = false, unique = true)
     private String hashedPassword;
     @Enumerated(EnumType.STRING)
-    private Role roles;
+    @ElementCollection(targetClass = Role.class)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    private List<Role> roles;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;
