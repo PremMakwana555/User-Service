@@ -4,19 +4,25 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
 public class Token extends Base{
     @Column(nullable = false)
-    private String token;
-    private boolean isUsed;
+    private String tokenValue;
+
     @Enumerated(EnumType.STRING)
     private Status status;
-    private boolean isExpired;
-    private Date expiryDate;
-    @ManyToOne(fetch = FetchType.EAGER)
+
+    @Column(nullable = false)
+    private LocalDateTime expiryDate;
+
+    @ManyToOne
     private User user;
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(expiryDate);
+    }
 }

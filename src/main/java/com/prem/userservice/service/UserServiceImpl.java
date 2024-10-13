@@ -2,6 +2,7 @@ package com.prem.userservice.service;
 
 import com.prem.userservice.dto.*;
 import com.prem.userservice.exceptions.InvalidUsernameOrPassword;
+import com.prem.userservice.exceptions.TokenExpiredException;
 import com.prem.userservice.exceptions.UserAlreadyExistsException;
 import com.prem.userservice.model.Role;
 import com.prem.userservice.model.Status;
@@ -9,21 +10,22 @@ import com.prem.userservice.model.Token;
 import com.prem.userservice.model.User;
 import com.prem.userservice.repository.TokenRepository;
 import com.prem.userservice.repository.UserRepository;
-import lombok.SneakyThrows;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
-import static java.lang.System.currentTimeMillis;
 
 @Service
 public class UserServiceImpl implements UserService {
+
+    @Value("${token.expiry}")
+    private int tokenExpiry;
 
     private UserRepository userRepository;
     private TokenRepository tokenRepository;
@@ -39,26 +41,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
-        Optional<User> user= userRepository.findByEmail(loginRequestDto.getEmail());
+        User user = userRepository.findByEmail(loginRequestDto.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        if (user.isEmpty()){
-            throw new UsernameNotFoundException("User not found");
+        if (!bCryptPasswordEncoder.matches(loginRequestDto.getPassword(), user.getHashedPassword())) {
+            throw new InvalidUsernameOrPassword("Invalid Username or Password");
         }
 
-        if (!bCryptPasswordEncoder.matches(loginRequestDto.getPassword(), user.get().getHashedPassword())){
-            throw new InvalidUsernameOrPassword("User not found");
-        }
+        Token token = generateToken(user);
+        user.getTokens().add(token);
 
-        Token token = new Token();
-        token.setToken(generateToken());
-        token.setUser(user.get());
-        token.setStatus(Status.ACTIVE);
-        token.setExpired(false);
-        token.setExpiryDate(new Date(currentTimeMillis() + 86400000));
-        user.get().getTokens().add(token);
-        userRepository.save(user.get());
         tokenRepository.save(token);
-        return new LoginResponseDto(token.getToken());
+        userRepository.save(user);
+        return new LoginResponseDto(token.getTokenValue());
     }
 
     @Override
@@ -67,29 +62,48 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public SignUpResponseDto signUp(SignUpRequestDTO signupRequestDTO) throws UserAlreadyExistsException {
-        Optional<User> existingUser = userRepository.findByEmail(signupRequestDTO.getEmail());
-        if (existingUser.isPresent()) {
-            throw new UserAlreadyExistsException("User already exists");
-        }
+    public SignUpResponseDto signUp(SignUpRequestDTO signupRequestDTO) {
+        userRepository.findByEmail(signupRequestDTO.getEmail())
+                .ifPresent(user -> {
+                    throw new UserAlreadyExistsException("User already exists, Please login with your credentials");
+                });
 
-        User user = new User();
-        user.setName(signupRequestDTO.getName());
-        user.setEmail(signupRequestDTO.getEmail());
-        user.setHashedPassword(bCryptPasswordEncoder.encode(signupRequestDTO.getPassword()));
-        user.setStatus(Status.ACTIVE);
-        user.setRoles(List.of(Role.USER));
+        User user = createUser(signupRequestDTO);
         userRepository.save(user);
 
         return new SignUpResponseDto(user);
     }
 
     @Override
-    public User validate(UserDto userDto, String token) {
-        return null;
+    public User validate(String token){
+        Token userToken = tokenRepository.findByTokenValue(token).get();
+//        Token userToken = tokenRepository.findByTokenValue(token)
+//                .filter(t -> !t.isExpired())
+//                .orElseThrow(() -> new TokenExpiredException("Token is Invalid or Expired, Please login again"));
+       return userToken.getUser();
     }
 
-    private String generateToken(){
-        return RandomStringUtils.randomAlphanumeric(128);
+    /*
+    *  Create a new user with the details from the request
+    * */
+    private User createUser(SignUpRequestDTO signupRequestDTO){
+        User user = new User();
+        user.setName(signupRequestDTO.getName());
+        user.setEmail(signupRequestDTO.getEmail());
+        user.setHashedPassword(bCryptPasswordEncoder.encode(signupRequestDTO.getPassword()));
+        user.setStatus(Status.ACTIVE);
+        user.setRoles(List.of(Role.USER));
+        return user;
     }
+
+    // Generate a token for the user
+    private Token generateToken(User user){
+        Token token = new Token();
+        token.setTokenValue(RandomStringUtils.randomAlphanumeric(128));
+        token.setUser(user);
+        token.setStatus(Status.ACTIVE);
+        token.setExpiryDate(LocalDateTime.now().plusDays(tokenExpiry));
+        return token;
+    }
+
 }
