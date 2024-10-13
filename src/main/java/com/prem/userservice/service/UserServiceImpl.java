@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 @Service
@@ -30,6 +31,7 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     private TokenRepository tokenRepository;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+
     @Autowired
     public UserServiceImpl(UserRepository userRepository, TokenRepository tokenRepository,
                            BCryptPasswordEncoder bCryptPasswordEncoder
@@ -76,10 +78,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User validate(String token){
-        Token userToken = tokenRepository.findByTokenValue(token).get();
-//        Token userToken = tokenRepository.findByTokenValue(token)
-//                .filter(t -> !t.isExpired())
-//                .orElseThrow(() -> new TokenExpiredException("Token is Invalid or Expired, Please login again"));
+        Token userToken = tokenRepository.findByTokenValue(token)
+                .orElseThrow(() -> new TokenExpiredException("Token is Invalid or Expired, Please login again"));
+
+        if(userToken.isExpired()){
+            CompletableFuture.runAsync(() -> {
+                userToken.setStatus(Status.DELETED);
+                tokenRepository.save(userToken);
+            });
+            throw new TokenExpiredException("Token is Invalid or Expired, Please login again");
+        }
        return userToken.getUser();
     }
 

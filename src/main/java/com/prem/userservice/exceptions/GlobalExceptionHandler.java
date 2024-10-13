@@ -20,9 +20,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(TokenExpiredException.class)
-    public String handleTokenExpiredException(TokenExpiredException e) {
+    public ResponseEntity<Object> handleTokenExpiredException(TokenExpiredException e) {
         logger.info("TokenExpiredException occurred: " + e.getMessage());
-        return e.getMessage();
+        return new ResponseEntity<>(e.getMessage(),
+                new HttpHeaders(), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)
