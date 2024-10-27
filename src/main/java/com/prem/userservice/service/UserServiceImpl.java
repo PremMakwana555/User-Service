@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,11 +31,11 @@ public class UserServiceImpl implements UserService {
 
     private UserRepository userRepository;
     private TokenRepository tokenRepository;
-    private BCryptPasswordEncoder bCryptPasswordEncoder;
+    private PasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, TokenRepository tokenRepository,
-                           BCryptPasswordEncoder bCryptPasswordEncoder
+                           PasswordEncoder bCryptPasswordEncoder
     ) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;

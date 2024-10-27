@@ -1,46 +1,58 @@
 package com.prem.userservice.security.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.prem.userservice.model.Role;
 import com.prem.userservice.model.User;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+@Setter
+@NoArgsConstructor
+@JsonDeserialize
 public class CustomUserDetails implements UserDetails {
 
     private String username;
     private String password;
+    private List<GrantedAuthority> authorities;
+    private boolean accountNonExpired;
+    private boolean accountNonLocked;
+    private boolean credentialsNonExpired;
+    private boolean enabled;
     private User user;
-    private List<GrantedAuthority> grantedAuthorities;
 
     public CustomUserDetails(User user) {
         this.user = user;
         this.username = user.getEmail();
         this.password = user.getHashedPassword();
-        this.grantedAuthorities = new ArrayList<>();
+        this.authorities = new ArrayList<>();
         for (Role role : user.getRoles()) {
-            grantedAuthorities.add(new CustomGrantedAuthority(role));
+            authorities.add(new CustomGrantedAuthority(role));
         }
+        this.accountNonExpired = true;
+        this.accountNonLocked = true;
+        this.credentialsNonExpired = true;
+        this.enabled = true;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return grantedAuthorities;
+        return authorities;
     }
 
     @Override
     public String getPassword() {
-        return username;
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return password;
+        return username;
     }
 
     @Override
