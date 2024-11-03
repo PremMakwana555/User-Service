@@ -2,10 +2,7 @@ package com.prem.userservice.security.models;
 
 import java.time.Instant;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "`authorization`")
@@ -13,60 +10,79 @@ public class Authorization {
     @Id
     @Column
     private String id;
+
     private String registeredClientId;
     private String principalName;
     private String authorizationGrantType;
+
     @Column(length = 1000)
     private String authorizedScopes;
-    @Column(length = 4000)
-    private String attributes;
+
+    @Lob
+    private String attributes; // Large text field, so using @Lob
+
     @Column(length = 500)
     private String state;
 
-    @Column(length = 4000)
-    private String authorizationCodeValue;
+    @Lob
+    private String authorizationCodeValue; // Using @Lob due to large potential size
+
     private Instant authorizationCodeIssuedAt;
     private Instant authorizationCodeExpiresAt;
+
     private String authorizationCodeMetadata;
 
-    @Column(length = 4000)
-    private String accessTokenValue;
+    @Lob
+    private String accessTokenValue; // Using @Lob
+
     private Instant accessTokenIssuedAt;
     private Instant accessTokenExpiresAt;
-    @Column(length = 2000)
-    private String accessTokenMetadata;
+
+    @Lob
+    private String accessTokenMetadata; // Using @Lob for metadata fields that can grow
+
     private String accessTokenType;
+
     @Column(length = 1000)
     private String accessTokenScopes;
 
-    @Column(length = 4000)
-    private String refreshTokenValue;
+    @Lob
+    private String refreshTokenValue; // Using @Lob
+
     private Instant refreshTokenIssuedAt;
     private Instant refreshTokenExpiresAt;
-    @Column(length = 2000)
-    private String refreshTokenMetadata;
 
-    @Column(length = 4000)
-    private String oidcIdTokenValue;
+    @Lob
+    private String refreshTokenMetadata; // Using @Lob
+
+    @Lob
+    private String oidcIdTokenValue; // Using @Lob
+
     private Instant oidcIdTokenIssuedAt;
     private Instant oidcIdTokenExpiresAt;
-    @Column(length = 2000)
-    private String oidcIdTokenMetadata;
-    @Column(length = 2000)
-    private String oidcIdTokenClaims;
 
-    @Column(length = 4000)
-    private String userCodeValue;
+    @Lob
+    private String oidcIdTokenMetadata; // Using @Lob
+
+    @Lob
+    private String oidcIdTokenClaims; // Using @Lob
+
+    @Lob
+    private String userCodeValue; // Using @Lob
+
     private Instant userCodeIssuedAt;
     private Instant userCodeExpiresAt;
-    @Column(length = 2000)
-    private String userCodeMetadata;
 
-    @Column(length = 4000)
-    private String deviceCodeValue;
+    @Lob
+    private String userCodeMetadata; // Using @Lob
+
+    @Lob
+    private String deviceCodeValue; // Using @Lob
+
     private Instant deviceCodeIssuedAt;
     private Instant deviceCodeExpiresAt;
-    @Column(length = 2000)
+
+    @Lob
     private String deviceCodeMetadata;
 
     public String getId() {

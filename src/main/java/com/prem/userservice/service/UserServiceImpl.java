@@ -4,17 +4,14 @@ import com.prem.userservice.dto.*;
 import com.prem.userservice.exceptions.InvalidUsernameOrPassword;
 import com.prem.userservice.exceptions.TokenExpiredException;
 import com.prem.userservice.exceptions.UserAlreadyExistsException;
-import com.prem.userservice.model.Role;
-import com.prem.userservice.model.Status;
-import com.prem.userservice.model.Token;
-import com.prem.userservice.model.User;
+import com.prem.userservice.model.*;
 import com.prem.userservice.repository.TokenRepository;
 import com.prem.userservice.repository.UserRepository;
+import com.prem.userservice.repository.UserRoleRepository;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,14 +29,16 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     private TokenRepository tokenRepository;
     private PasswordEncoder bCryptPasswordEncoder;
+    private UserRoleRepository userRoleRepository;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, TokenRepository tokenRepository,
-                           PasswordEncoder bCryptPasswordEncoder
+                           PasswordEncoder bCryptPasswordEncoder, UserRoleRepository userRoleRepository
     ) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.userRoleRepository = userRoleRepository;
     }
 
     @Override
@@ -78,35 +77,38 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User validate(String token){
+    public User validate(String token) {
         Token userToken = tokenRepository.findByTokenValue(token)
                 .orElseThrow(() -> new TokenExpiredException("Token is Invalid or Expired, Please login again"));
 
-        if(userToken.isExpired()){
+        if (userToken.isExpired()) {
             CompletableFuture.runAsync(() -> {
                 userToken.setStatus(Status.DELETED);
                 tokenRepository.save(userToken);
             });
             throw new TokenExpiredException("Token is Invalid or Expired, Please login again");
         }
-       return userToken.getUser();
+        return userToken.getUser();
     }
 
     /*
-    *  Create a new user with the details from the request
-    * */
-    private User createUser(SignUpRequestDTO signupRequestDTO){
+     *  Create a new user with the details from the request
+     * */
+    private User createUser(SignUpRequestDTO signupRequestDTO) {
         User user = new User();
         user.setName(signupRequestDTO.getName());
         user.setEmail(signupRequestDTO.getEmail());
         user.setHashedPassword(bCryptPasswordEncoder.encode(signupRequestDTO.getPassword()));
         user.setStatus(Status.ACTIVE);
-        user.setRoles(List.of(Role.USER));
+
+        UserRole userRole = new UserRole(Roles.USER.toString());
+        userRoleRepository.save(userRole);
+        user.setRoles(List.of(userRole));
         return user;
     }
 
     // Generate a token for the user
-    private Token generateToken(User user){
+    private Token generateToken(User user) {
         Token token = new Token();
         token.setTokenValue(RandomStringUtils.randomAlphanumeric(128));
         token.setUser(user);

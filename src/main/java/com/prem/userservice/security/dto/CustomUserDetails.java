@@ -1,8 +1,8 @@
 package com.prem.userservice.security.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.prem.userservice.model.Role;
 import com.prem.userservice.model.User;
+import com.prem.userservice.model.UserRole;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,7 +31,7 @@ public class CustomUserDetails implements UserDetails {
         this.username = user.getEmail();
         this.password = user.getHashedPassword();
         this.authorities = new ArrayList<>();
-        for (Role role : user.getRoles()) {
+        for (UserRole role : user.getRoles()) {
             authorities.add(new CustomGrantedAuthority(role));
         }
         this.accountNonExpired = true;

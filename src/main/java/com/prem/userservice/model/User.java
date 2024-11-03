@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,16 +21,19 @@ public class User extends Base {
     @Column(name = "password", nullable = false, unique = true)
     private String hashedPassword;
 
-    @Enumerated(EnumType.STRING)
-    @ElementCollection(targetClass = Role.class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    private List<Role> roles;
+    @ManyToMany(fetch = FetchType.EAGER)
+//    @JoinTable(
+//            name = "user_roles", // Join table name
+//            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"), // FK in join table for User
+//            inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id") // FK in join table for Role
+//    )
+    private List<UserRole> roles;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @OneToMany(fetch = FetchType.EAGER)
-    private List<Token> tokens;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    private List<Token> tokens = new ArrayList<>();
 }
 

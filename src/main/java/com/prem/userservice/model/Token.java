@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "tokens")
 @Getter
 @Setter
 public class Token extends Base{
@@ -19,7 +20,7 @@ public class Token extends Base{
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
     public boolean isExpired() {

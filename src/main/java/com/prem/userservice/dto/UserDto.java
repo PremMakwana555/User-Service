@@ -1,6 +1,6 @@
 package com.prem.userservice.dto;
 
-import com.prem.userservice.model.Role;
+import com.prem.userservice.model.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,5 +15,5 @@ import java.util.List;
 public class UserDto {
     private String name;
     private String email;
-    private List<Role> roles;
+    private List<UserRole> roles;
 }

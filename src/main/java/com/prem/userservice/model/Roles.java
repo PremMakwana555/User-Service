@@ -1,5 +1,5 @@
 package com.prem.userservice.model;
 
-public enum Role {
+public enum Roles {
     USER, ADMIN
 }
