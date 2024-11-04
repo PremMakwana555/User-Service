@@ -19,12 +19,14 @@ public class Authorization {
     private String authorizedScopes;
 
     @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String attributes; // Large text field, so using @Lob
 
     @Column(length = 500)
     private String state;
 
     @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String authorizationCodeValue; // Using @Lob due to large potential size
 
     private Instant authorizationCodeIssuedAt;
@@ -33,12 +35,14 @@ public class Authorization {
     private String authorizationCodeMetadata;
 
     @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String accessTokenValue; // Using @Lob
 
     private Instant accessTokenIssuedAt;
     private Instant accessTokenExpiresAt;
 
     @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String accessTokenMetadata; // Using @Lob for metadata fields that can grow
 
     private String accessTokenType;
