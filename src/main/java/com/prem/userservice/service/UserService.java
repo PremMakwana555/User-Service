@@ -7,7 +7,12 @@ import org.springframework.stereotype.Service;
 @Service
 public interface UserService {
     LoginResponseDto login(LoginRequestDto loginRequestDto);
+
     void logout(LogoutRequestDto logoutRequestDto);
+
     SignUpResponseDto signUp(SignUpRequestDTO signupRequestDTO);
+
     User validate(String token);
+
+    UserDto getUserById(String id);
 }

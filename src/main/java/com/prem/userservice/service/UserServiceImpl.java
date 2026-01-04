@@ -4,6 +4,8 @@ import com.prem.userservice.dto.*;
 import com.prem.userservice.exceptions.InvalidUsernameOrPassword;
 import com.prem.userservice.exceptions.TokenExpiredException;
 import com.prem.userservice.exceptions.UserAlreadyExistsException;
+import com.prem.userservice.kafka.event.UserRegisteredEvent;
+import com.prem.userservice.kafka.producer.UserEventProducer;
 import com.prem.userservice.model.*;
 import com.prem.userservice.repository.TokenRepository;
 import com.prem.userservice.repository.UserRepository;
@@ -19,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -30,15 +31,17 @@ public class UserServiceImpl implements UserService {
     private TokenRepository tokenRepository;
     private PasswordEncoder bCryptPasswordEncoder;
     private UserRoleRepository userRoleRepository;
+    private UserEventProducer userEventProducer;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, TokenRepository tokenRepository,
-                           PasswordEncoder bCryptPasswordEncoder, UserRoleRepository userRoleRepository
-    ) {
+            PasswordEncoder bCryptPasswordEncoder, UserRoleRepository userRoleRepository,
+            UserEventProducer userEventProducer) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.userRoleRepository = userRoleRepository;
+        this.userEventProducer = userEventProducer;
     }
 
     @Override
@@ -73,6 +76,16 @@ public class UserServiceImpl implements UserService {
         User user = createUser(signupRequestDTO);
         userRepository.save(user);
 
+        // Publish UserRegisteredEvent to Kafka
+        UserRegisteredEvent event = UserRegisteredEvent.builder()
+                .userId(user.getId().toString()) // Convert UUID to String
+                .email(user.getEmail())
+                .firstName(user.getName())
+                .lastName("") // Update if you have lastName field
+                .registeredAt(LocalDateTime.now())
+                .build();
+        userEventProducer.publishUserRegisteredEvent(event);
+
         return new SignUpResponseDto(user);
     }
 
@@ -91,9 +104,16 @@ public class UserServiceImpl implements UserService {
         return userToken.getUser();
     }
 
+    @Override
+    public UserDto getUserById(String id) {
+        User user = userRepository.findById(java.util.UUID.fromString(id))
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + id));
+        return com.prem.userservice.mappings.UserMapper.INSTANCE.userToUserDto(user);
+    }
+
     /*
-     *  Create a new user with the details from the request
-     * */
+     * Create a new user with the details from the request
+     */
     private User createUser(SignUpRequestDTO signupRequestDTO) {
         User user = new User();
         user.setName(signupRequestDTO.getName());
